@@ -1,6 +1,6 @@
 # mr-reviewer
 
-An AI agent that automatically reviews GitHub pull requests and posts review comments — built on Azure AI Foundry Agent Service with a Claude model.
+An AI agent that automatically reviews GitHub pull requests and posts review comments — built on Azure AI Foundry Agent Service with a catalog model (`gpt-oss-120b`; see [ADR-008](docs/adrs/adr-008-primary-model-quota.md) for why it's not Claude).
 
 ## Status
 Early/MVP, in active development. This repo documents before it implements: specs exist before the code that implements them, and architectural choices get an ADR before they get built.
@@ -8,7 +8,7 @@ Early/MVP, in active development. This repo documents before it implements: spec
 ## How it works
 1. A PR is opened or updated on GitHub.
 2. A GitHub Actions workflow triggers, authenticates to Azure via OIDC, and fetches the diff.
-3. An Azure AI Foundry agent (Claude) reviews the diff against basic categories (bugs, security smells, missing tests/null-checks, style).
+3. An Azure AI Foundry agent (`gpt-oss-120b`) reviews the diff against basic categories (bugs, security smells, missing tests/null-checks, style).
 4. The workflow posts the findings back on the PR — a summary comment plus inline comments on specific lines.
 
 Full flow and diagram: [architecture.md](architecture.md).

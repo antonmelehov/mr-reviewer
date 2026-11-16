@@ -1,7 +1,7 @@
 # ADR-005: Model access path and fallback policy
 
 ## Status
-Accepted
+Accepted — the GPT-4o fallback example below has no quota on the deploying subscription either; see [ADR-008](adr-008-primary-model-quota.md) for the actual primary/fallback models in use. The manual-runbook policy itself is unchanged.
 
 ## Context
 Depends on [ADR-004](adr-004-agent-hosting.md): the agent's primary model is Claude from the Foundry catalog. That catalog's availability varies by region/subscription, and the catalog also natively includes OpenAI models (Azure OpenAI is part of Foundry). We need a policy for what happens if the primary model isn't available, without over-building resilience the MVP doesn't need.

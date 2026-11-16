@@ -1,7 +1,7 @@
 # ADR-004: Review agent hosting
 
 ## Status
-Accepted
+Accepted — primary model choice superseded by [ADR-008](adr-008-primary-model-quota.md) (Claude has no quota on the deploying subscription); the hosting approach (Foundry Agent Service, swappable catalog model) still stands.
 
 ## Context
 Something has to run the actual review logic — call a model, reason over the diff, decide what to comment. This ADR documents a decision made up front (before this project's documentation discipline started), not one explored fresh.
