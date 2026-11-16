@@ -15,6 +15,7 @@ No code gets written for a capability without a spec in `docs/specs/` describing
 - **Dependencies:** `azure-ai-projects` (Foundry agent calls), `azure-identity` (auth), `PyGithub` (diff fetch + comment posting).
 - **Tests:** `pytest`, mirroring `src/` structure under `tests/`.
 - **Lint/format:** `ruff`.
+- **Packaging:** this repo is distributed as a composite GitHub Action — `action.yml` at the repo root wraps `src/` ([ADR-007](docs/adrs/adr-007-distribution-model.md)). This repo's own `.github/workflows/` covers two different things: this repo's CI (lint/test), and a self-referential workflow (`uses: ./`) that exercises the action against its own PRs.
 
 Nothing above is scaffolded yet — `src/` is empty until the first capability has a spec. When the first spec lands, create `requirements.txt` (or `pyproject.toml`) and `tests/` alongside the code that implements it, not before.
 
@@ -30,9 +31,10 @@ ruff check .
 There's no local emulator for Azure AI Foundry Agent Service — you can't fully run the review step offline. For unit tests, mock the Foundry agent's response (see the relevant spec's Given/When/Then scenarios for expected inputs/outputs). For a manual smoke test against the real agent, authenticate locally with `az login` and let `DefaultAzureCredential` pick that up — don't create or use a service principal/API key for local dev.
 
 ## Secrets
-- **In CI (GitHub Actions):** no stored secrets. Auth to Azure is via OIDC federated credentials ([ADR-002](docs/adrs/adr-002-trigger-mechanism.md)); anything the Foundry agent itself needs comes from Key Vault via managed identity. Posting comments uses the Actions-provided `GITHUB_TOKEN`, not a personal token.
+- **In CI (GitHub Actions):** no stored secrets at all. Auth to Azure is via OIDC federated credentials, exchanged for an Azure AD access token with RBAC permissions on the Foundry project ([ADR-002](docs/adrs/adr-002-trigger-mechanism.md)). No Key Vault is provisioned for the current scope — see [ADR-005](docs/adrs/adr-005-claude-access-path.md)'s consequences for why. Posting comments uses the Actions-provided `GITHUB_TOKEN`, not a personal token.
 - **Locally:** auth via `az login` (see above). If you ever need a GitHub token for local testing of comment-posting, put it in a `.env` file — it's gitignored, never commit it, and use a token scoped only to the test repo.
-- Nothing that counts as a secret goes in the repo, a workflow file, or an ADR/spec. If a doc needs to reference where a secret comes from, name the Key Vault secret or the OIDC trust relationship, not the value.
+- Nothing that counts as a secret goes in the repo, a workflow file, or an ADR/spec. If a doc needs to reference where a credential comes from, name the OIDC trust relationship or RBAC role, not a value.
+- If the direct-Anthropic-API fallback in ADR-005 is ever actually adopted, that's the point to introduce Key Vault — not before.
 
 ## Where to look first
 - [architecture.md](architecture.md) — the three-step flow and diagram.

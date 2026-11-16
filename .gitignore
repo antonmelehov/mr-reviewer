@@ -7,7 +7,7 @@ Thumbs.db
 !.vscode/extensions.json
 .idea/
 
-# Secrets / local config (secrets live in Key Vault / managed identity, never here)
+# Secrets / local config (never committed — Azure auth is OIDC, not a stored credential)
 .env
 .env.*
 local.settings.json

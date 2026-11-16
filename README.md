@@ -20,6 +20,6 @@ Full flow and diagram: [architecture.md](architecture.md).
 - [AGENTS.md](AGENTS.md) — how to work in this repo: local setup, where secrets come from, the spec/ADR-first rule
 
 ## MVP scope
-In scope: trigger on PR push, fetch the diff, review it against basic categories, post comments, log everything, secrets via Key Vault/managed identity only.
+In scope: trigger on PR push, fetch the diff, review it against basic categories, post comments, log everything, no stored secrets (Azure auth via OIDC, GitHub auth via the Actions-provided token).
 
 Out of scope for now: auto-merge/approve, full-repo context beyond the diff and touched files, per-user permissions, multi-platform support.

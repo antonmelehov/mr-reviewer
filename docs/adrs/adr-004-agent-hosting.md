@@ -9,7 +9,7 @@ Something has to run the actual review logic — call a model, reason over the d
 ## Options considered
 - **Bespoke container** (own Docker image running an agent loop, on Container Apps/AKS) — full control, but reinvents orchestration, auth, retries, and model-client plumbing that a managed agent service already provides.
 - **Raw API calls** (call a model API ad hoc from inside the CI step, no agent framework) — minimal infra, but no persistent thread/tool-call management, no managed-identity-based auth to the model, and no Azure-native observability without hand-building it.
-- **Azure AI Foundry Agent Service with a catalog model (chosen)** — managed orchestration and tool-calling, native Key Vault/managed-identity integration, and the underlying model is swappable via the catalog without re-architecting (see [ADR-005](adr-005-claude-access-path.md)).
+- **Azure AI Foundry Agent Service with a catalog model (chosen)** — managed orchestration and tool-calling, native managed-identity/RBAC integration (no Key Vault needed for this), and the underlying model is swappable via the catalog without re-architecting (see [ADR-005](adr-005-claude-access-path.md)).
 
 ## Decision
 Use **Azure AI Foundry Agent Service**, with the agent configured against a **Claude model from the Foundry model catalog** as the primary model.

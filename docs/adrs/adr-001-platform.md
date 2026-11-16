@@ -9,7 +9,7 @@ The MVP needs one real platform to host the repo and its merge/pull requests. Pe
 ## Options considered
 - **GitHub** — already have an account; Actions CI is built in; REST/webhook/Review APIs are well documented and widely supported by SDKs and examples. Fastest path to a working test repo.
 - **GitLab** — "merge request" is its native vocabulary, and CI/CD is solid, but setting up an org/runner from scratch adds setup time we don't need to spend.
-- **Azure DevOps** — same tenant as the rest of the infra (Foundry, Key Vault), but its REST API and PR comment/thread model are more awkward to work with, with a steeper learning curve for this specific use case.
+- **Azure DevOps** — same tenant as the rest of the infra (Foundry), but its REST API and PR comment/thread model are more awkward to work with, with a steeper learning curve for this specific use case.
 
 ## Decision
 Use **GitHub**.

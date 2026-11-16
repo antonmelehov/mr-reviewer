@@ -17,4 +17,5 @@ Depends on [ADR-004](adr-004-agent-hosting.md): the agent's primary model is Cla
 ## Consequences
 - If Claude ever becomes unavailable, there's a manual step and a gap in reviews until someone redeploys — accepted for the MVP.
 - No direct Anthropic API integration, no second secret, no second auth path to maintain right now.
+- No Key Vault is provisioned for the MVP as a result: OIDC gives the workflow an Azure AD token directly via RBAC, and nothing in the current scope needs a stored secret. Key Vault is added only if/when the direct-Anthropic-API fallback option above is ever actually adopted (to hold that API key).
 - Revisit (toward an automatic fallback) only if this actually causes friction in practice — avoids building speculative robustness the brief explicitly scopes out.

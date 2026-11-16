@@ -11,7 +11,7 @@ Claude Code — the CLI used to *build* this repo — is not part of this pictur
 3. **The Foundry agent — Azure AI Foundry Agent Service, configured with a Claude model from the Foundry catalog — reviews the diff** against the MVP's review categories (obvious bugs, security smells, missing tests/null-checks, style) and returns its findings to the workflow. ([ADR-004](docs/adrs/adr-004-agent-hosting.md), [ADR-005](docs/adrs/adr-005-claude-access-path.md))
 4. **The workflow posts the findings back on the PR**: one summary comment (overview + severity counts), updated in place on every push, plus inline comments on specific lines for high-confidence findings. Both are re-located via a hidden marker so re-pushing the same PR doesn't spam duplicate comments. ([ADR-003](docs/adrs/adr-003-comment-posting.md))
 
-All secrets (GitHub token for posting comments, anything the Foundry call needs beyond OIDC) come from Azure Key Vault via managed identity — nothing is stored in the repo or the workflow file itself.
+No secrets are stored in the repo or the workflow file. Azure auth is OIDC → an Azure AD access token via RBAC (no Key Vault needed for the current scope — see [ADR-005](docs/adrs/adr-005-claude-access-path.md)); GitHub auth for posting comments uses the Actions-provided token.
 
 ## Diagram
 
@@ -20,12 +20,12 @@ sequenceDiagram
     participant Dev as Developer
     participant GH as GitHub (PR)
     participant GA as GitHub Actions workflow
-    participant KV as Key Vault
+    participant AAD as Azure AD (OIDC)
     participant Foundry as Foundry Agent (Claude)
 
     Dev->>GH: Push / open PR
     GH->>GA: pull_request event triggers workflow
-    GA->>KV: Fetch secrets (managed identity / OIDC)
+    GA->>AAD: Exchange OIDC token for Azure AD access token
     GA->>GH: Fetch diff + touched files
     GA->>Foundry: Send diff, invoke review agent
     Foundry-->>GA: Findings (bugs, security, missing tests, style)
