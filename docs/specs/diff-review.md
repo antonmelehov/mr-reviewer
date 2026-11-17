@@ -7,7 +7,7 @@ Context: [architecture.md](../../architecture.md) step 3, [ADR-004](../adrs/adr-
 ## Requirements
 1. The diff is reviewed against four categories: obvious bugs, security smells, missing tests/null-checks, style.
 2. Review is scoped strictly to the diff and touched files — no broader repo context, and no flagging of pre-existing issues outside the diff.
-3. Review is performed by calling the Azure AI Foundry agent configured with a Claude catalog model ([ADR-004](../adrs/adr-004-agent-hosting.md)). No direct Anthropic API call happens here — that's the manual fallback runbook in [ADR-005](../adrs/adr-005-claude-access-path.md), not automatic code in this capability.
+3. Review is performed by calling the Azure AI Foundry agent configured with a catalog model ([ADR-004](../adrs/adr-004-agent-hosting.md); currently `gpt-oss-120b`, not Claude, due to subscription quota constraints — see [ADR-008](../adrs/adr-008-primary-model-quota.md)). No direct Anthropic API call happens here — that's the manual fallback runbook in [ADR-005](../adrs/adr-005-claude-access-path.md), not automatic code in this capability.
 4. Each finding includes: category, location (file, and line where applicable — not every finding is line-anchored, e.g. "missing tests for this change" may be file-level), a confidence/severity level, and a human-readable message. The confidence/severity signal exists so comment-posting can later decide what goes inline vs. summary-only.
 5. If the Foundry agent call fails or times out, the step reports a failure for that run — it never returns partial or fabricated findings as if they were a complete review.
 6. Every run is logged: what diff was reviewed and what findings (or failure) came back.
