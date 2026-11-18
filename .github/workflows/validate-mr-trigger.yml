@@ -1,0 +1,35 @@
+name: mr-trigger validation
+
+# Throwaway validation that src/trigger.py's fetch_pr_diff works against a
+# real PR, matching mr-trigger.md's Definition of Done. Also dogfoods the
+# trigger config + concurrency behavior the spec requires (Req 1, 4).
+# Delete this file once superseded by the real composite-action workflow.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: mr-trigger-validation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate-trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Fetch PR diff via src/trigger.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m src.run_trigger
