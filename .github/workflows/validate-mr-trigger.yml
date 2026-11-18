@@ -29,9 +29,6 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: TEMP - slow down the job to test concurrency cancellation
-        run: sleep 90
-
       - name: Fetch PR diff via src/trigger.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
