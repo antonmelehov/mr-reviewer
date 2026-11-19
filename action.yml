@@ -1,0 +1,54 @@
+name: 'mr-reviewer'
+description: 'AI-powered pull request review via Azure AI Foundry Agent Service'
+branding:
+  icon: 'eye'
+  color: 'purple'
+
+inputs:
+  azure-client-id:
+    description: 'Client ID of the Entra ID app registration trusted via OIDC federated credential'
+    required: true
+  azure-tenant-id:
+    description: 'Entra ID tenant ID'
+    required: true
+  azure-subscription-id:
+    description: 'Azure subscription ID containing the Foundry project'
+    required: true
+  foundry-project-endpoint:
+    description: 'Azure AI Foundry project endpoint, e.g. https://<account>.services.ai.azure.com/api/projects/<project>'
+    required: true
+  foundry-agent-name:
+    description: 'Name of the Foundry agent configured to review diffs (see docs/specs/diff-review.md)'
+    required: true
+  github-token:
+    description: 'Token used to fetch the diff and post comments'
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      shell: bash
+      run: pip install -r "${{ github.action_path }}/requirements.txt"
+
+    - name: Azure login via OIDC
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.azure-client-id }}
+        tenant-id: ${{ inputs.azure-tenant-id }}
+        subscription-id: ${{ inputs.azure-subscription-id }}
+
+    - name: Run mr-reviewer
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        FOUNDRY_PROJECT_ENDPOINT: ${{ inputs.foundry-project-endpoint }}
+        FOUNDRY_AGENT_NAME: ${{ inputs.foundry-agent-name }}
+      run: python -m src.main
