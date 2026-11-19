@@ -1,0 +1,33 @@
+name: comment-posting validation
+
+# Throwaway validation that src/comment_posting.py's post_review works
+# against real PR comments, matching comment-posting.md's Definition of
+# Done. Driven by VALIDATION_SCENARIO_do_not_merge.json, edited between
+# pushes to walk through first_run -> repush_unchanged -> failure ->
+# fixed_and_clean. Delete this file once superseded by the real
+# composite-action workflow.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate-comment-posting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Post review via src/comment_posting.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m src.run_comment_posting
