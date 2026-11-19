@@ -1,0 +1,33 @@
+name: full pipeline e2e validation
+
+# Throwaway: first real exercise of action.yml itself via uses: ./ (ADR-007's
+# self-referential pattern), proving the composite action's wiring works end
+# to end against a real PR - not just the three src/ modules called directly.
+# Delete this file once a permanent dogfood workflow replaces it.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: mr-reviewer-e2e-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./
+        with:
+          azure-client-id: ${{ vars.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          foundry-project-endpoint: https://mr-reviewer-foundry-anton-melehov.services.ai.azure.com/api/projects/mr-reviewer
+          foundry-agent-name: mr-reviewer-diff-review
