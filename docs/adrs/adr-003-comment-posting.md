@@ -15,6 +15,6 @@ The agent must post review feedback on the MR without re-posting or spamming on 
 Use the **hybrid** approach: a single, update-in-place summary comment plus inline comments for high-confidence findings.
 
 ## Consequences
-- The summary comment carries a hidden marker (e.g. an HTML comment with the MR's latest reviewed commit SHA) so the bot can find and PATCH it instead of creating a new one each push.
-- Inline comments are posted as a GitHub PR review; previously-posted bot reviews/comments need to be tracked (by ID) so re-pushing doesn't duplicate comments on unchanged lines.
+- The summary comment carries a hidden marker — a fixed HTML comment (`<!-- mr-reviewer:summary -->`), not the MR's commit SHA as originally sketched here. A static marker is simpler to search for than a SHA-based one, which would change on every push and require matching "any old-SHA marker" instead of one exact string.
+- Inline comments carry their own hidden marker encoding the finding's category (`<!-- mr-reviewer:inline:{category} -->`). Combined with GitHub's own `path`/`line` fields on each comment, this gives a `(path, line, category)` key the bot re-derives fresh on every run via `pr.get_review_comments()` — prior comments aren't tracked by persisted ID across runs, since nothing is persisted between runs at all.
 - This is more initial build effort than either option alone — the exact dedup mechanics (which GitHub Review API calls, what counts as "unchanged") are pinned down in [docs/specs/comment-posting.md](../specs/comment-posting.md), not here.
