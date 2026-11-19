@@ -11,14 +11,14 @@ SCENARIOS = {
         "findings": [
             Finding(
                 category="bug",
-                file="VALIDATION_SCENARIO_do_not_merge.json",
+                file="src/run_comment_posting.py",
                 line=1,
                 severity="high",
                 message="validation: high-severity finding",
             ),
             Finding(
                 category="style",
-                file="VALIDATION_SCENARIO_do_not_merge.json",
+                file="src/run_comment_posting.py",
                 line=1,
                 severity="low",
                 message="validation: low-severity finding",
@@ -30,14 +30,14 @@ SCENARIOS = {
         "findings": [
             Finding(
                 category="bug",
-                file="VALIDATION_SCENARIO_do_not_merge.json",
+                file="src/run_comment_posting.py",
                 line=1,
                 severity="high",
                 message="validation: high-severity finding",
             ),
             Finding(
                 category="style",
-                file="VALIDATION_SCENARIO_do_not_merge.json",
+                file="src/run_comment_posting.py",
                 line=1,
                 severity="low",
                 message="validation: low-severity finding",
