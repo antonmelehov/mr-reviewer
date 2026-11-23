@@ -34,10 +34,10 @@ Context: [architecture.md](../../architecture.md) step 2, [ADR-002](../adrs/adr-
 - Then the run fails visibly and does not proceed to fetch the diff or invoke review
 
 ## Definition of Done
-- [ ] Workflow runs automatically on PR opened/synchronize/reopened events against a real test PR
-- [ ] No long-lived Azure secret exists anywhere in the repo or workflow file — auth is OIDC only
-- [ ] Workflow successfully fetches the full diff and touched-file list for the PR's current head commit
-- [ ] Pushing a new commit while a prior run is in progress cancels the stale run and starts a new one
-- [ ] A push with no associated PR does not trigger the workflow
-- [ ] A simulated OIDC/auth failure causes the run to fail visibly, not pass silently
-- [ ] The diff + touched files are available in a form the diff-review step can consume
+- [x] Workflow runs automatically on PR opened/synchronize/reopened events against a real test PR
+- [x] No long-lived Azure secret exists anywhere in the repo or workflow file — auth is OIDC only
+- [x] Workflow successfully fetches the full diff and touched-file list for the PR's current head commit
+- [x] Pushing a new commit while a prior run is in progress cancels the stale run and starts a new one — observed directly: a forced-slow run was confirmed `cancelled` by a follow-up push
+- [ ] A push with no associated PR does not trigger the workflow — relies on GitHub's own `on: pull_request` semantics; never actually exercised with a real push-with-no-PR
+- [ ] A simulated OIDC/auth failure causes the run to fail visibly, not pass silently — never actually simulated; every validation run had working OIDC
+- [x] The diff + touched files are available in a form the diff-review step can consume

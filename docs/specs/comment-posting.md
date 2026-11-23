@@ -41,10 +41,10 @@ Context: [architecture.md](../../architecture.md) step 4, [ADR-003](../adrs/adr-
 - Then it creates or updates the summary comment to state the review could not complete
 
 ## Definition of Done
-- [ ] First run on a PR creates a summary comment (with marker) and inline comments for high-confidence findings
-- [ ] A re-push with unchanged findings updates the existing summary comment in place, with no duplicate inline comments
-- [ ] A fixed finding has its inline comment removed/resolved on the next run, not left stale
-- [ ] A "no findings" result produces an explicit "no issues found" comment, not silence
-- [ ] A diff-review failure produces a comment stating review could not complete, not silence
-- [ ] All comments are posted using the Actions-provided `GITHUB_TOKEN`, no personal token
-- [ ] The bot's own prior comment/review is reliably located via its marker/identity, never confused with another user's comment
+- [x] First run on a PR creates a summary comment (with marker) and inline comments for high-confidence findings
+- [x] A re-push with unchanged findings updates the existing summary comment in place, with no duplicate inline comments — observed directly: same comment IDs across repeated pushes
+- [x] A fixed finding has its inline comment removed/resolved on the next run, not left stale — observed directly: inline comment deleted once its finding disappeared
+- [x] A "no findings" result produces an explicit "no issues found" comment, not silence
+- [x] A diff-review failure produces a comment stating review could not complete, not silence
+- [x] All comments are posted using the Actions-provided `GITHUB_TOKEN`, no personal token
+- [x] The bot's own prior comment/review is reliably located via its marker/identity, never confused with another user's comment — observed directly (a real human comment was never touched across 4 live runs) and defended with regression tests for a marker-containing foreign comment
