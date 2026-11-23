@@ -1,12 +1,19 @@
 import pytest
+from github import GithubException
 
 from src.comment_posting import post_review
 from src.diff_review import Finding
 
 
+class FakeUser:
+    def __init__(self, login):
+        self.login = login
+
+
 class FakeIssueComment:
-    def __init__(self, body):
+    def __init__(self, body, user_login="github-actions[bot]"):
         self.body = body
+        self.user = FakeUser(user_login)
         self.edited_with = None
         self.deleted = False
 
@@ -19,10 +26,11 @@ class FakeIssueComment:
 
 
 class FakeReviewComment:
-    def __init__(self, path, line, body):
+    def __init__(self, path, line, body, user_login="github-actions[bot]"):
         self.path = path
         self.line = line
         self.body = body
+        self.user = FakeUser(user_login)
         self.deleted = False
 
     def delete(self):
@@ -55,6 +63,8 @@ class FakePullRequest:
         return list(self._review_comments)
 
     def create_review_comment(self, body, commit, path, line=None):
+        if path in getattr(self, "failing_paths", ()):
+            raise GithubException(422, message=f"line {line} is not part of the diff")
         comment = FakeReviewComment(path, line, body)
         self._review_comments.append(comment)
         self.created_review_comments.append(comment)
@@ -152,3 +162,42 @@ def test_foreign_comment_without_marker_is_never_edited():
 
     assert foreign.edited_with is None
     assert len(pr.created_issue_comments) == 1
+
+
+def test_foreign_comment_containing_the_marker_is_never_edited():
+    foreign = FakeIssueComment(
+        "look, I can type <!-- mr-reviewer:summary --> too", user_login="some-human"
+    )
+    pr = FakePullRequest(issue_comments=[foreign])
+
+    post_review(pr, findings=[])
+
+    assert foreign.edited_with is None
+    assert len(pr.created_issue_comments) == 1
+
+
+def test_one_failing_inline_comment_does_not_block_the_rest():
+    stale_inline = FakeReviewComment("c.py", 9, "old finding\n\n<!-- mr-reviewer:inline:style -->")
+    pr = FakePullRequest(review_comments=[stale_inline])
+    pr.failing_paths = {"a.py"}
+
+    findings = [
+        Finding(category="bug", file="a.py", line=2, severity="high", message="rejected by GitHub"),
+        Finding(category="security", file="b.py", line=5, severity="high", message="created fine"),
+    ]
+
+    post_review(pr, findings=findings)
+
+    assert [c.path for c in pr.created_review_comments] == ["b.py"]
+    assert stale_inline.deleted is True
+
+
+def test_foreign_inline_comment_containing_the_marker_is_never_deleted():
+    foreign_inline = FakeReviewComment(
+        "a.py", 2, "nice try <!-- mr-reviewer:inline:bug -->", user_login="some-human"
+    )
+    pr = FakePullRequest(review_comments=[foreign_inline])
+
+    post_review(pr, findings=[])
+
+    assert foreign_inline.deleted is False

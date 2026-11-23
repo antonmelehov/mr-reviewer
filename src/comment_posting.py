@@ -2,6 +2,8 @@ import logging
 import re
 from collections import Counter
 
+from github import GithubException
+
 from src.diff_review import Finding
 
 logger = logging.getLogger(__name__)
@@ -9,6 +11,11 @@ logger = logging.getLogger(__name__)
 SUMMARY_MARKER = "<!-- mr-reviewer:summary -->"
 INLINE_MARKER_RE = re.compile(r"<!-- mr-reviewer:inline:(\w+) -->")
 HIGH_CONFIDENCE_SEVERITY = "high"
+BOT_LOGIN = "github-actions[bot]"
+
+
+def _is_own_comment(comment) -> bool:
+    return comment.user.login == BOT_LOGIN
 
 
 def post_review(pr, findings: list[Finding] | None = None, error_message: str | None = None) -> None:
@@ -44,7 +51,7 @@ def _build_summary_body(findings: list[Finding] | None, error_message: str | Non
 
 def _upsert_summary_comment(pr, body: str) -> None:
     for comment in pr.get_issue_comments():
-        if SUMMARY_MARKER in comment.body:
+        if _is_own_comment(comment) and SUMMARY_MARKER in comment.body:
             comment.edit(body)
             logger.info("updated existing summary comment")
             return
@@ -61,6 +68,8 @@ def _reconcile_inline_comments(pr, findings: list[Finding]) -> None:
 
     existing_by_key = {}
     for comment in pr.get_review_comments():
+        if not _is_own_comment(comment):
+            continue
         match = INLINE_MARKER_RE.search(comment.body)
         if match:
             existing_by_key[(comment.path, comment.line, match.group(1))] = comment
@@ -71,7 +80,17 @@ def _reconcile_inline_comments(pr, findings: list[Finding]) -> None:
         desired_keys.add(key)
         if key not in existing_by_key:
             body = f"{finding.message}\n\n<!-- mr-reviewer:inline:{finding.category} -->"
-            pr.create_review_comment(body, pr.head.sha, finding.file, line=finding.line)
+            try:
+                pr.create_review_comment(body, pr.head.sha, finding.file, line=finding.line)
+            except GithubException as exc:
+                logger.error(
+                    "failed to create inline comment for %s:%s (%s): %s",
+                    finding.file,
+                    finding.line,
+                    finding.category,
+                    exc,
+                )
+                continue
             logger.info("created inline comment for %s:%s (%s)", finding.file, finding.line, finding.category)
 
     for key, comment in existing_by_key.items():
