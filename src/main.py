@@ -26,9 +26,11 @@ def main() -> None:
     github = Github(github_token)
     pr = github.get_repo(repo_full_name).get_pull(pr_number)
 
-    trigger_result = fetch_pr_diff(github, repo_full_name, pr_number)
+    trigger_result = fetch_pr_diff(pr)
     logger.info(
-        "fetched %d touched file(s), %d chars of diff",
+        "PR #%d (%s): fetched %d touched file(s), %d chars of diff",
+        pr.number,
+        pr.head.sha,
         len(trigger_result.touched_files),
         len(trigger_result.diff_text),
     )

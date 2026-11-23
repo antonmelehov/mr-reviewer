@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 
-from github import Github
-
 
 @dataclass
 class TriggerResult:
@@ -9,10 +7,7 @@ class TriggerResult:
     diff_text: str
 
 
-def fetch_pr_diff(github: Github, repo_full_name: str, pr_number: int) -> TriggerResult:
-    repo = github.get_repo(repo_full_name)
-    pr = repo.get_pull(pr_number)
-
+def fetch_pr_diff(pr) -> TriggerResult:
     touched_files: list[str] = []
     patches: list[str] = []
 
