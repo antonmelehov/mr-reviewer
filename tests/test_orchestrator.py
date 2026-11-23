@@ -26,19 +26,22 @@ class FakeOpenAIClient:
         self.responses = FakeResponses(output_text=output_text, error=error)
 
 
-def _patch_post_review(monkeypatch):
-    posted = {}
+def _patch_post_functions(monkeypatch):
+    posted = {"findings": None, "error_message": None}
 
-    def fake_post_review(pr, findings=None, error_message=None):
+    def fake_post_success(pr, findings):
         posted["findings"] = findings
+
+    def fake_post_failure(pr, error_message):
         posted["error_message"] = error_message
 
-    monkeypatch.setattr(orchestrator_module, "post_review", fake_post_review)
+    monkeypatch.setattr(orchestrator_module, "post_success", fake_post_success)
+    monkeypatch.setattr(orchestrator_module, "post_failure", fake_post_failure)
     return posted
 
 
 def test_run_review_posts_findings_on_success(monkeypatch):
-    posted = _patch_post_review(monkeypatch)
+    posted = _patch_post_functions(monkeypatch)
     payload = {"findings": [{"category": "bug", "file": "a.py", "line": 1, "severity": "high", "message": "x"}]}
     client = FakeOpenAIClient(output_text=json.dumps(payload))
 
@@ -49,7 +52,7 @@ def test_run_review_posts_findings_on_success(monkeypatch):
 
 
 def test_run_review_posts_error_message_on_diff_review_failure(monkeypatch):
-    posted = _patch_post_review(monkeypatch)
+    posted = _patch_post_functions(monkeypatch)
     client = FakeOpenAIClient(output_text="not valid json")
 
     run_review(pr=object(), openai_client=client, touched_files=["a.py"], diff_text="diff")

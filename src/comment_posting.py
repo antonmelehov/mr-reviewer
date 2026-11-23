@@ -5,6 +5,7 @@ from collections import Counter
 from github import GithubException
 
 from src.diff_review import Finding
+from src.github_types import IssueCommentLike, PullRequestLike, ReviewCommentLike
 
 logger = logging.getLogger(__name__)
 
@@ -14,27 +15,23 @@ HIGH_CONFIDENCE_SEVERITY = "high"
 BOT_LOGIN = "github-actions[bot]"
 
 
-def _is_own_comment(comment) -> bool:
+def _is_own_comment(comment: IssueCommentLike | ReviewCommentLike) -> bool:
     return comment.user.login == BOT_LOGIN
 
 
-def post_review(pr, findings: list[Finding] | None = None, error_message: str | None = None) -> None:
-    if (findings is None) == (error_message is None):
-        raise ValueError("exactly one of findings or error_message must be set")
-
-    summary_body = _build_summary_body(findings, error_message)
-    _upsert_summary_comment(pr, summary_body)
-
-    if findings is not None:
-        _reconcile_inline_comments(pr, findings)
-
+def post_success(pr: PullRequestLike, findings: list[Finding]) -> None:
+    _upsert_summary_comment(pr, _build_success_summary(findings))
+    _reconcile_inline_comments(pr, findings)
     logger.info("comment-posting complete")
 
 
-def _build_summary_body(findings: list[Finding] | None, error_message: str | None) -> str:
-    if error_message is not None:
-        return f"### mr-reviewer\n\nReview could not complete: {error_message}\n\n{SUMMARY_MARKER}"
+def post_failure(pr: PullRequestLike, error_message: str) -> None:
+    body = f"### mr-reviewer\n\nReview could not complete: {error_message}\n\n{SUMMARY_MARKER}"
+    _upsert_summary_comment(pr, body)
+    logger.info("comment-posting complete (failure reported)")
 
+
+def _build_success_summary(findings: list[Finding]) -> str:
     if not findings:
         return f"### mr-reviewer\n\nNo issues found.\n\n{SUMMARY_MARKER}"
 
@@ -49,7 +46,7 @@ def _build_summary_body(findings: list[Finding] | None, error_message: str | Non
     return "\n".join(lines)
 
 
-def _upsert_summary_comment(pr, body: str) -> None:
+def _upsert_summary_comment(pr: PullRequestLike, body: str) -> None:
     for comment in pr.get_issue_comments():
         if _is_own_comment(comment) and SUMMARY_MARKER in comment.body:
             comment.edit(body)
@@ -59,7 +56,7 @@ def _upsert_summary_comment(pr, body: str) -> None:
     logger.info("created new summary comment")
 
 
-def _reconcile_inline_comments(pr, findings: list[Finding]) -> None:
+def _reconcile_inline_comments(pr: PullRequestLike, findings: list[Finding]) -> None:
     high_confidence = [
         finding
         for finding in findings

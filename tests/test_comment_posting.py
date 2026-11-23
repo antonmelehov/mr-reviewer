@@ -1,7 +1,6 @@
-import pytest
 from github import GithubException
 
-from src.comment_posting import post_review
+from src.comment_posting import post_failure, post_success
 from src.diff_review import Finding
 
 
@@ -71,16 +70,6 @@ class FakePullRequest:
         return comment
 
 
-def test_post_review_requires_exactly_one_of_findings_or_error():
-    pr = FakePullRequest()
-
-    with pytest.raises(ValueError):
-        post_review(pr)
-
-    with pytest.raises(ValueError):
-        post_review(pr, findings=[], error_message="boom")
-
-
 def test_first_run_creates_summary_and_inline_for_high_severity_only():
     pr = FakePullRequest()
     findings = [
@@ -88,7 +77,7 @@ def test_first_run_creates_summary_and_inline_for_high_severity_only():
         Finding(category="style", file="a.py", line=5, severity="low", message="naming"),
     ]
 
-    post_review(pr, findings=findings)
+    post_success(pr, findings)
 
     assert len(pr.created_issue_comments) == 1
     assert "<!-- mr-reviewer:summary -->" in pr.created_issue_comments[0].body
@@ -102,7 +91,7 @@ def test_high_severity_finding_without_line_gets_no_inline_comment():
     pr = FakePullRequest()
     findings = [Finding(category="missing_test", file="a.py", line=None, severity="high", message="no tests")]
 
-    post_review(pr, findings=findings)
+    post_success(pr, findings)
 
     assert pr.created_review_comments == []
 
@@ -114,7 +103,7 @@ def test_repush_unchanged_findings_updates_summary_and_does_not_duplicate_inline
 
     findings = [Finding(category="bug", file="a.py", line=2, severity="high", message="zero div")]
 
-    post_review(pr, findings=findings)
+    post_success(pr, findings)
 
     assert pr.created_issue_comments == []
     assert existing_summary.edited_with is not None
@@ -127,7 +116,7 @@ def test_fixed_finding_deletes_stale_inline_comment():
     stale_inline = FakeReviewComment("a.py", 2, "zero div\n\n<!-- mr-reviewer:inline:bug -->")
     pr = FakePullRequest(review_comments=[stale_inline])
 
-    post_review(pr, findings=[])
+    post_success(pr, [])
 
     assert stale_inline.deleted is True
 
@@ -135,7 +124,7 @@ def test_fixed_finding_deletes_stale_inline_comment():
 def test_clean_diff_produces_no_issues_summary():
     pr = FakePullRequest()
 
-    post_review(pr, findings=[])
+    post_success(pr, [])
 
     assert len(pr.created_issue_comments) == 1
     assert "No issues found" in pr.created_issue_comments[0].body
@@ -145,7 +134,7 @@ def test_failure_produces_failure_summary_and_leaves_inline_untouched():
     existing_inline = FakeReviewComment("a.py", 2, "zero div\n\n<!-- mr-reviewer:inline:bug -->")
     pr = FakePullRequest(review_comments=[existing_inline])
 
-    post_review(pr, error_message="Foundry agent call failed: timeout")
+    post_failure(pr, "Foundry agent call failed: timeout")
 
     assert len(pr.created_issue_comments) == 1
     assert "could not complete" in pr.created_issue_comments[0].body
@@ -158,7 +147,7 @@ def test_foreign_comment_without_marker_is_never_edited():
     foreign = FakeIssueComment("just a regular comment from a human")
     pr = FakePullRequest(issue_comments=[foreign])
 
-    post_review(pr, findings=[])
+    post_success(pr, [])
 
     assert foreign.edited_with is None
     assert len(pr.created_issue_comments) == 1
@@ -170,7 +159,7 @@ def test_foreign_comment_containing_the_marker_is_never_edited():
     )
     pr = FakePullRequest(issue_comments=[foreign])
 
-    post_review(pr, findings=[])
+    post_success(pr, [])
 
     assert foreign.edited_with is None
     assert len(pr.created_issue_comments) == 1
@@ -186,7 +175,7 @@ def test_one_failing_inline_comment_does_not_block_the_rest():
         Finding(category="security", file="b.py", line=5, severity="high", message="created fine"),
     ]
 
-    post_review(pr, findings=findings)
+    post_success(pr, findings)
 
     assert [c.path for c in pr.created_review_comments] == ["b.py"]
     assert stale_inline.deleted is True
@@ -198,6 +187,6 @@ def test_foreign_inline_comment_containing_the_marker_is_never_deleted():
     )
     pr = FakePullRequest(review_comments=[foreign_inline])
 
-    post_review(pr, findings=[])
+    post_success(pr, [])
 
     assert foreign_inline.deleted is False
