@@ -79,6 +79,18 @@ def test_review_diff_drops_findings_for_files_outside_touched_files():
     assert findings == [Finding(category="bug", file="a.py", line=2, severity="high", message="real finding")]
 
 
+def test_review_diff_raises_on_non_integer_line():
+    payload = {
+        "findings": [
+            {"category": "bug", "file": "a.py", "line": "two", "severity": "high", "message": "x"}
+        ]
+    }
+    client = FakeOpenAIClient(output_text=json.dumps(payload))
+
+    with pytest.raises(DiffReviewError):
+        review_diff(client, ["a.py"], "diff")
+
+
 def test_review_diff_raises_on_malformed_json():
     client = FakeOpenAIClient(output_text="not json")
 

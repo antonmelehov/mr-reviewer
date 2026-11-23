@@ -1,11 +1,24 @@
 import json
 import logging
 from dataclasses import dataclass
+from typing import Protocol
 
 logger = logging.getLogger(__name__)
 
 VALID_CATEGORIES = {"bug", "security", "missing_test", "style"}
 VALID_SEVERITIES = {"high", "medium", "low"}
+
+
+class _Response(Protocol):
+    output_text: str
+
+
+class _Responses(Protocol):
+    def create(self, input: str) -> _Response: ...
+
+
+class OpenAIClientLike(Protocol):
+    responses: _Responses
 
 
 class DiffReviewError(Exception):
@@ -21,7 +34,7 @@ class Finding:
     message: str
 
 
-def review_diff(openai_client, touched_files: list[str], diff_text: str) -> list[Finding]:
+def review_diff(openai_client: OpenAIClientLike, touched_files: list[str], diff_text: str) -> list[Finding]:
     logger.info(
         "reviewing diff: %d touched file(s), %d chars of diff text",
         len(touched_files),
@@ -81,10 +94,14 @@ def _parse_finding(raw: object) -> Finding:
     if raw["severity"] not in VALID_SEVERITIES:
         raise DiffReviewError(f"unrecognized severity: {raw['severity']!r}")
 
+    line = raw.get("line")
+    if line is not None and (isinstance(line, bool) or not isinstance(line, int)):
+        raise DiffReviewError(f"'line' must be an integer or null, got: {line!r}")
+
     return Finding(
         category=raw["category"],
         file=raw["file"],
-        line=raw.get("line"),
+        line=line,
         severity=raw["severity"],
         message=raw["message"],
     )
