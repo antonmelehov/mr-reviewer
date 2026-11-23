@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from src.github_types import PullRequestLike
+
 
 @dataclass
 class TriggerResult:
@@ -7,7 +9,7 @@ class TriggerResult:
     diff_text: str
 
 
-def fetch_pr_diff(pr) -> TriggerResult:
+def fetch_pr_diff(pr: PullRequestLike) -> TriggerResult:
     touched_files: list[str] = []
     patches: list[str] = []
 
