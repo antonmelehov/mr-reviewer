@@ -65,6 +65,20 @@ def test_review_diff_sends_touched_files_and_diff_in_the_input():
     assert "the diff text" in client.responses.last_input
 
 
+def test_review_diff_drops_findings_for_files_outside_touched_files():
+    payload = {
+        "findings": [
+            Finding(category="bug", file="a.py", line=2, severity="high", message="real finding").__dict__,
+            {"category": "bug", "file": "b.py", "line": 1, "severity": "high", "message": "out of scope"},
+        ]
+    }
+    client = FakeOpenAIClient(output_text=json.dumps(payload))
+
+    findings = review_diff(client, ["a.py"], "diff")
+
+    assert findings == [Finding(category="bug", file="a.py", line=2, severity="high", message="real finding")]
+
+
 def test_review_diff_raises_on_malformed_json():
     client = FakeOpenAIClient(output_text="not json")
 

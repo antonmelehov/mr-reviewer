@@ -36,13 +36,13 @@ def review_diff(openai_client, touched_files: list[str], diff_text: str) -> list
         logger.error("Foundry agent call failed: %s", exc)
         raise DiffReviewError(f"Foundry agent call failed: {exc}") from exc
 
-    findings = _parse_findings(response.output_text)
+    findings = _parse_findings(response.output_text, touched_files)
 
     logger.info("review complete: %d finding(s)", len(findings))
     return findings
 
 
-def _parse_findings(output_text: str) -> list[Finding]:
+def _parse_findings(output_text: str, touched_files: list[str]) -> list[Finding]:
     try:
         payload = json.loads(output_text)
     except json.JSONDecodeError as exc:
@@ -55,7 +55,15 @@ def _parse_findings(output_text: str) -> list[Finding]:
     if not isinstance(raw_findings, list):
         raise DiffReviewError("'findings' was not a list")
 
-    return [_parse_finding(raw) for raw in raw_findings]
+    findings = [_parse_finding(raw) for raw in raw_findings]
+
+    out_of_scope = [finding for finding in findings if finding.file not in touched_files]
+    if out_of_scope:
+        for finding in out_of_scope:
+            logger.warning("dropping out-of-scope finding for untouched file: %s", finding.file)
+        findings = [finding for finding in findings if finding.file in touched_files]
+
+    return findings
 
 
 def _parse_finding(raw: object) -> Finding:
